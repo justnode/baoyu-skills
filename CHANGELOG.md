@@ -2,6 +2,14 @@
 
 English | [中文](./CHANGELOG.zh.md)
 
+## 1.74.0 - 2026-03-20
+
+### Features
+- `baoyu-markdown-to-html`: CLI now supports all rendering options — color, font-family, font-size, code-theme, mac-code-block, line-number, count, legend
+
+### Fixes
+- `baoyu-markdown-to-html`: fix CSS custom property regex to handle quoted values; grace/simple themes now layer default CSS
+
 ## 1.73.3 - 2026-03-20
 
 ### Fixes
