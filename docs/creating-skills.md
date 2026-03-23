@@ -34,20 +34,22 @@ metadata:
 1. Create `skills/baoyu-<name>/SKILL.md` with YAML front matter
 2. Add TypeScript in `skills/baoyu-<name>/scripts/` (if applicable)
 3. Add prompt templates in `skills/baoyu-<name>/prompts/` if needed
-4. Register in `marketplace.json` under appropriate category
+4. Register the skill in `.claude-plugin/marketplace.json` under the `baoyu-skills` plugin entry
 5. Add Script Directory section to SKILL.md if skill has scripts
 6. Add openclaw metadata to frontmatter
 
-## Category Selection
+## Skill Grouping
 
-| If your skill... | Use category |
-|------------------|--------------|
-| Generates visual content (images, slides, comics) | `content-skills` |
-| Publishes to platforms (X, WeChat, Weibo) | `content-skills` |
-| Provides AI generation backend | `ai-generation-skills` |
-| Converts or processes content | `utility-skills` |
+All skills are registered under the single `baoyu-skills` plugin. Use these logical groups when deciding where the skill should appear in the docs:
 
-New category: add plugin object to `marketplace.json` with `name`, `description`, `skills[]`.
+| If your skill... | Use group |
+|------------------|-----------|
+| Generates visual content (images, slides, comics) | Content Skills |
+| Publishes to platforms (X, WeChat, Weibo) | Content Skills |
+| Provides AI generation backend | AI Generation Skills |
+| Converts or processes content | Utility Skills |
+
+If you add a new logical group, update the docs that present grouped skills, but keep the skill registered under the single `baoyu-skills` plugin entry.
 
 ## Writing Descriptions
 

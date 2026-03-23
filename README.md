@@ -52,16 +52,14 @@ Run the following command in Claude Code:
 
 1. Select **Browse and install plugins**
 2. Select **baoyu-skills**
-3. Select the plugin(s) you want to install
+3. Select the **baoyu-skills** plugin
 4. Select **Install now**
 
 **Option 2: Direct Install**
 
 ```bash
-# Install specific plugin
-/plugin install content-skills@baoyu-skills
-/plugin install ai-generation-skills@baoyu-skills
-/plugin install utility-skills@baoyu-skills
+# Install the marketplace's single plugin
+/plugin install baoyu-skills@baoyu-skills
 ```
 
 **Option 3: Ask the Agent**
@@ -70,13 +68,13 @@ Simply tell Claude Code:
 
 > Please install Skills from github.com/JimLiu/baoyu-skills
 
-### Available Plugins
+### Available Plugin
 
-| Plugin | Description | Skills |
-|--------|-------------|--------|
-| **content-skills** | Content generation and publishing | [xhs-images](#baoyu-xhs-images), [infographic](#baoyu-infographic), [cover-image](#baoyu-cover-image), [slide-deck](#baoyu-slide-deck), [comic](#baoyu-comic), [article-illustrator](#baoyu-article-illustrator), [post-to-x](#baoyu-post-to-x), [post-to-wechat](#baoyu-post-to-wechat), [post-to-weibo](#baoyu-post-to-weibo) |
-| **ai-generation-skills** | AI-powered generation backends | [image-gen](#baoyu-image-gen), [danger-gemini-web](#baoyu-danger-gemini-web) |
-| **utility-skills** | Utility tools for content processing | [youtube-transcript](#baoyu-youtube-transcript), [url-to-markdown](#baoyu-url-to-markdown), [danger-x-to-markdown](#baoyu-danger-x-to-markdown), [compress-image](#baoyu-compress-image), [format-markdown](#baoyu-format-markdown), [markdown-to-html](#baoyu-markdown-to-html), [translate](#baoyu-translate) |
+The marketplace now exposes a single plugin so each skill is registered exactly once.
+
+| Plugin | Description | Includes |
+|--------|-------------|----------|
+| **baoyu-skills** | Content generation, AI backends, and utility tools for daily work efficiency | All skills in this repository, organized below as Content Skills, AI Generation Skills, and Utility Skills |
 
 ## Update Skills
 

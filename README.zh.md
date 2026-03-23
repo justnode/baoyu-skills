@@ -52,16 +52,14 @@ clawhub install baoyu-markdown-to-html
 
 1. 选择 **Browse and install plugins**
 2. 选择 **baoyu-skills**
-3. 选择要安装的插件
+3. 选择 **baoyu-skills** 插件
 4. 选择 **Install now**
 
 **方式二：直接安装**
 
 ```bash
-# 安装指定插件
-/plugin install content-skills@baoyu-skills
-/plugin install ai-generation-skills@baoyu-skills
-/plugin install utility-skills@baoyu-skills
+# 安装 marketplace 中唯一的插件
+/plugin install baoyu-skills@baoyu-skills
 ```
 
 **方式三：告诉 Agent**
@@ -72,11 +70,11 @@ clawhub install baoyu-markdown-to-html
 
 ### 可用插件
 
-| 插件 | 说明 | 包含技能 |
+现在 marketplace 只暴露一个插件，这样每个 skill 只会注册一次。
+
+| 插件 | 说明 | 包含内容 |
 |------|------|----------|
-| **content-skills** | 内容生成和发布 | [xhs-images](#baoyu-xhs-images), [infographic](#baoyu-infographic), [cover-image](#baoyu-cover-image), [slide-deck](#baoyu-slide-deck), [comic](#baoyu-comic), [article-illustrator](#baoyu-article-illustrator), [post-to-x](#baoyu-post-to-x), [post-to-wechat](#baoyu-post-to-wechat), [post-to-weibo](#baoyu-post-to-weibo) |
-| **ai-generation-skills** | AI 生成后端 | [image-gen](#baoyu-image-gen), [danger-gemini-web](#baoyu-danger-gemini-web) |
-| **utility-skills** | 内容处理工具 | [youtube-transcript](#baoyu-youtube-transcript), [url-to-markdown](#baoyu-url-to-markdown), [danger-x-to-markdown](#baoyu-danger-x-to-markdown), [compress-image](#baoyu-compress-image), [format-markdown](#baoyu-format-markdown), [markdown-to-html](#baoyu-markdown-to-html), [translate](#baoyu-translate) |
+| **baoyu-skills** | 提供内容生成、AI 后端和日常效率工具技能 | 仓库中的全部 skills，仍按下方的内容技能、AI 生成技能、工具技能三个分类展示 |
 
 ## 更新技能
 
