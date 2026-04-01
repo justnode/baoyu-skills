@@ -399,6 +399,22 @@ export async function runConvertCommand(options: ConvertCommandOptions): Promise
       if (restored) logger.info(`Restored ${adapter.name} session cookies from sidecar.`);
     }
 
+    if (options.waitMode === "interaction" && adapter.checkLogin) {
+      await context.browser.goto(url.toString(), options.timeoutMs).catch(() => {});
+      const preLogin = await adapter.checkLogin(context);
+      if (preLogin.state !== "logged_in") {
+        didLogin = true;
+        await waitForInteraction(adapter, context, {
+          type: "wait_for_interaction",
+          kind: "login",
+          provider: preLogin.provider ?? adapter.name,
+          prompt: `Please sign in to ${adapter.name === "x" ? "X" : adapter.name} in the opened Chrome window. Extraction will continue automatically once login is detected.`,
+          reason: preLogin.reason ?? `Not logged in to ${adapter.name}`,
+          requiresVisibleBrowser: true,
+        }, options);
+      }
+    }
+
     if (options.waitMode === "force") {
       await context.browser.goto(url.toString(), options.timeoutMs).catch(() => {});
       await waitForForceResume(adapter, context, options);
