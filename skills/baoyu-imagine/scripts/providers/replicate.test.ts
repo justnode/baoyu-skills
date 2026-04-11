@@ -111,7 +111,7 @@ test("Replicate input builder maps Seedream models to size-based schema", () => 
       "A robot painter",
       "bytedance/seedream-4.5",
       makeArgs({
-        quality: "2k",
+        size: "1536x1024",
         aspectRatio: "16:9",
         n: 4,
       }),
@@ -119,8 +119,9 @@ test("Replicate input builder maps Seedream models to size-based schema", () => 
     ),
     {
       prompt: "A robot painter",
-      size: "2K",
-      aspect_ratio: "16:9",
+      size: "custom",
+      width: 1536,
+      height: 1024,
       sequential_image_generation: "auto",
       max_images: 4,
       image_input: ["data:image/png;base64,AAAA"],
@@ -207,12 +208,16 @@ test("Replicate input builder falls back to nano-banana schema for unknown model
 test("Replicate validation catches unsupported Seedream and Wan argument combinations", () => {
   assert.throws(
     () => validateArgs("bytedance/seedream-4.5", makeArgs({ size: "large" })),
-    /Seedream on Replicate requires --size/,
+    /Seedream 4.5 on Replicate requires --size/,
   );
 
   assert.throws(
     () => validateArgs("bytedance/seedream-5-lite", makeArgs({ size: "4K" })),
     /Seedream on Replicate requires --size to be one of 2K, 3K/,
+  );
+
+  assert.doesNotThrow(
+    () => validateArgs("bytedance/seedream-4.5", makeArgs({ size: "1536x1024" })),
   );
 
   assert.throws(

@@ -156,10 +156,21 @@ function buildSeedreamInput(prompt: string, model: string, args: CliArgs, refere
   const requestedSize = args.size || getSeedreamDefaultSize(model, args.quality);
 
   if (requestedSize) {
-    input.size = normalizePresetSize(requestedSize);
+    if (isSeedream45Model(model)) {
+      const parsed = parsePixelSize(requestedSize);
+      if (parsed) {
+        input.size = "custom";
+        input.width = parsed.width;
+        input.height = parsed.height;
+      } else {
+        input.size = normalizePresetSize(requestedSize);
+      }
+    } else {
+      input.size = normalizePresetSize(requestedSize);
+    }
   }
 
-  if (args.aspectRatio) {
+  if (args.aspectRatio && input.size !== "custom") {
     input.aspect_ratio = args.aspectRatio;
   }
 
@@ -217,11 +228,20 @@ export function validateArgs(model: string, args: CliArgs): void {
     const referenceCount = args.referenceImages.length;
 
     if (args.size) {
-      const normalizedSize = normalizePresetSize(args.size);
-      if (!getAllowedSeedreamSizes(model).has(normalizedSize)) {
-        throw new Error(
-          `Seedream on Replicate requires --size to be one of ${Array.from(getAllowedSeedreamSizes(model)).join(", ")}. Received: ${args.size}`
-        );
+      if (isSeedream45Model(model)) {
+        const normalizedSize = normalizePresetSize(args.size);
+        if (!getAllowedSeedreamSizes(model).has(normalizedSize) && !parsePixelSize(args.size)) {
+          throw new Error(
+            `Seedream 4.5 on Replicate requires --size to be one of ${Array.from(getAllowedSeedreamSizes(model)).join(", ")} or custom dimensions like 1536x1024. Received: ${args.size}`
+          );
+        }
+      } else {
+        const normalizedSize = normalizePresetSize(args.size);
+        if (!getAllowedSeedreamSizes(model).has(normalizedSize)) {
+          throw new Error(
+            `Seedream on Replicate requires --size to be one of ${Array.from(getAllowedSeedreamSizes(model)).join(", ")}. Received: ${args.size}`
+          );
+        }
       }
     }
 
