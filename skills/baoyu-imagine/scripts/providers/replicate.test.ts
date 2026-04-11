@@ -6,6 +6,7 @@ import {
   buildInput,
   extractOutputUrl,
   generateImage,
+  getDefaultOutputExtension,
   parseModelId,
   validateArgs,
 } from "./replicate.ts";
@@ -239,6 +240,12 @@ test("Replicate output extraction supports string, array, and object URLs", () =
     () => extractOutputUrl({ output: { invalid: true } } as never),
     /Unexpected Replicate output format/,
   );
+});
+
+test("Replicate default output extension matches model family behavior", () => {
+  assert.equal(getDefaultOutputExtension("bytedance/seedream-4.5"), ".jpg");
+  assert.equal(getDefaultOutputExtension("bytedance/seedream-5-lite"), ".png");
+  assert.equal(getDefaultOutputExtension("google/nano-banana-2"), ".png");
 });
 
 test("Replicate generateImage validates arguments before making API requests", async () => {

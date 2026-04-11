@@ -200,6 +200,12 @@ function buildWanInput(prompt: string, model: string, args: CliArgs, referenceIm
   return input;
 }
 
+export function getDefaultOutputExtension(model: string): ".png" | ".jpg" {
+  if (isSeedream45Model(model)) return ".jpg";
+  if (isSeedream5LiteModel(model)) return ".png";
+  return ".png";
+}
+
 export function validateArgs(model: string, args: CliArgs): void {
   if (isNanoBananaModel(model) && args.n > 1) {
     throw new Error("Nano Banana models on Replicate do not support --n yet because their current schema does not expose a multi-image count field.");
