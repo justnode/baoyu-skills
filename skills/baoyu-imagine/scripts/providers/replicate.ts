@@ -2,10 +2,31 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import type { CliArgs } from "../types";
 
-const DEFAULT_MODEL = "google/nano-banana-pro";
+const DEFAULT_MODEL = "google/nano-banana-2";
 const SYNC_WAIT_SECONDS = 60;
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_MS = 300_000;
+const SIZE_PRESET_PATTERN = /^\d+K$/i;
+const SEEDREAM_45_SIZES = new Set(["2K", "4K"]);
+const SEEDREAM_5_LITE_SIZES = new Set(["2K", "3K"]);
+const WAN_PRO_SIZES = new Set([
+  "1K", "2K", "4K",
+  "1024*1024", "2048*2048", "4096*4096",
+  "1280*720", "720*1280",
+  "2048*1152", "1152*2048",
+  "4096*2304", "2304*4096",
+  "1024*768", "768*1024",
+  "2048*1536", "1536*2048",
+  "4096*3072", "3072*4096",
+]);
+const WAN_SIZES = new Set([
+  "1K", "2K",
+  "1024*1024", "2048*2048",
+  "1280*720", "720*1280",
+  "2048*1152", "1152*2048",
+  "1024*768", "768*1024",
+  "2048*1536", "1536*2048",
+]);
 
 export function getDefaultModel(): string {
   return process.env.REPLICATE_IMAGE_MODEL || DEFAULT_MODEL;
@@ -31,17 +52,84 @@ export function parseModelId(model: string): { owner: string; name: string; vers
   return { owner: parts[0], name: parts[1], version: version || null };
 }
 
-export function buildInput(prompt: string, args: CliArgs, referenceImages: string[]): Record<string, unknown> {
+function isNanoBananaModel(model: string): boolean {
+  return model.startsWith("google/nano-banana");
+}
+
+function isSeedreamModel(model: string): boolean {
+  return model.startsWith("bytedance/seedream-4.5") || model.startsWith("bytedance/seedream-5-lite");
+}
+
+function isSeedream45Model(model: string): boolean {
+  return model.startsWith("bytedance/seedream-4.5");
+}
+
+function isSeedream5LiteModel(model: string): boolean {
+  return model.startsWith("bytedance/seedream-5-lite");
+}
+
+function isWanModel(model: string): boolean {
+  return model.startsWith("wan-video/wan-2.7-image");
+}
+
+function isWanProModel(model: string): boolean {
+  return model.startsWith("wan-video/wan-2.7-image-pro");
+}
+
+function parsePixelSize(size: string): { width: number; height: number } | null {
+  const match = size.trim().match(/^(\d+)\s*[xX*]\s*(\d+)$/);
+  if (!match) return null;
+
+  const width = Number.parseInt(match[1]!, 10);
+  const height = Number.parseInt(match[2]!, 10);
+
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  return { width, height };
+}
+
+function normalizePixelSize(size: string): string {
+  const parsed = parsePixelSize(size);
+  if (!parsed) return size;
+  return `${parsed.width}*${parsed.height}`;
+}
+
+function isPresetSize(size: string): boolean {
+  return SIZE_PRESET_PATTERN.test(size.trim());
+}
+
+function getSeedreamDefaultSize(model: string, quality: CliArgs["quality"]): string | null {
+  if (!isSeedreamModel(model) || !quality) return null;
+  return "2K";
+}
+
+function getWanDefaultSize(quality: CliArgs["quality"]): string | null {
+  if (quality === "normal") return "1K";
+  if (quality === "2k") return "2K";
+  return null;
+}
+
+function getAllowedSeedreamSizes(model: string): Set<string> {
+  return isSeedream45Model(model) ? SEEDREAM_45_SIZES : SEEDREAM_5_LITE_SIZES;
+}
+
+function getAllowedWanSizes(model: string): Set<string> {
+  return isWanProModel(model) ? WAN_PRO_SIZES : WAN_SIZES;
+}
+
+function normalizePresetSize(size: string): string {
+  return size.trim().toUpperCase();
+}
+
+function buildNanoBananaInput(prompt: string, args: CliArgs, referenceImages: string[]): Record<string, unknown> {
   const input: Record<string, unknown> = { prompt };
 
   if (args.aspectRatio) {
     input.aspect_ratio = args.aspectRatio;
   } else if (referenceImages.length > 0) {
     input.aspect_ratio = "match_input_image";
-  }
-
-  if (args.n > 1) {
-    input.number_of_images = args.n;
   }
 
   if (args.quality === "normal") {
@@ -57,6 +145,123 @@ export function buildInput(prompt: string, args: CliArgs, referenceImages: strin
   }
 
   return input;
+}
+
+function buildSeedreamInput(prompt: string, model: string, args: CliArgs, referenceImages: string[]): Record<string, unknown> {
+  const input: Record<string, unknown> = { prompt };
+  const requestedSize = args.size || getSeedreamDefaultSize(model, args.quality);
+
+  if (requestedSize) {
+    input.size = normalizePresetSize(requestedSize);
+  }
+
+  if (args.aspectRatio) {
+    input.aspect_ratio = args.aspectRatio;
+  }
+
+  if (args.n > 1) {
+    input.sequential_image_generation = "auto";
+    input.max_images = args.n;
+  }
+
+  if (referenceImages.length > 0) {
+    input.image_input = referenceImages;
+  }
+
+  if (isSeedream5LiteModel(model)) {
+    input.output_format = "png";
+  }
+
+  return input;
+}
+
+function buildWanInput(prompt: string, model: string, args: CliArgs, referenceImages: string[]): Record<string, unknown> {
+  const input: Record<string, unknown> = { prompt };
+  const requestedSize = args.size || getWanDefaultSize(args.quality);
+
+  if (requestedSize) {
+    input.size = parsePixelSize(requestedSize) ? normalizePixelSize(requestedSize) : normalizePresetSize(requestedSize);
+  }
+
+  if (args.n > 1) {
+    input.num_outputs = args.n;
+  }
+
+  if (referenceImages.length > 0) {
+    input.images = referenceImages;
+  }
+
+  // thinking_mode only applies to pure text-to-image.
+  // image_set_mode is not exposed by the current CLI, so no extra check is needed here yet.
+  if (referenceImages.length === 0) {
+    input.thinking_mode = true;
+  }
+
+  return input;
+}
+
+export function validateArgs(model: string, args: CliArgs): void {
+  if (isNanoBananaModel(model) && args.n > 1) {
+    throw new Error("Nano Banana models on Replicate do not support --n yet because their current schema does not expose a multi-image count field.");
+  }
+
+  if (isSeedreamModel(model)) {
+    if (args.size) {
+      const normalizedSize = normalizePresetSize(args.size);
+      if (!getAllowedSeedreamSizes(model).has(normalizedSize)) {
+        throw new Error(
+          `Seedream on Replicate requires --size to be one of ${Array.from(getAllowedSeedreamSizes(model)).join(", ")}. Received: ${args.size}`
+        );
+      }
+    }
+
+    if (args.n < 1 || args.n > 15) {
+      throw new Error("Seedream on Replicate supports --n values from 1 to 15.");
+    }
+  }
+
+  if (isWanModel(model)) {
+    if (args.aspectRatio && !args.size) {
+      throw new Error("Wan image models on Replicate require --size when using --ar. This provider does not infer size from aspect ratio.");
+    }
+
+    if (args.size) {
+      const normalizedSize = parsePixelSize(args.size) ? normalizePixelSize(args.size) : normalizePresetSize(args.size);
+      if (!getAllowedWanSizes(model).has(normalizedSize)) {
+        throw new Error(
+          `Wan image models on Replicate require --size to be one of ${Array.from(getAllowedWanSizes(model)).join(", ")}. Received: ${args.size}`
+        );
+      }
+    }
+
+    if (args.n < 1 || args.n > 4) {
+      throw new Error("Wan image models on Replicate support --n values from 1 to 4 in standard mode.");
+    }
+
+    if (args.size && normalizePresetSize(args.size) === "4K" && args.referenceImages.length > 0) {
+      throw new Error("Wan 2.7 Image Pro on Replicate only supports 4K for text-to-image requests without input images.");
+    }
+  }
+}
+
+export function buildInput(
+  prompt: string,
+  model: string,
+  args: CliArgs,
+  referenceImages: string[]
+): Record<string, unknown> {
+  if (isSeedreamModel(model)) {
+    return buildSeedreamInput(prompt, model, args, referenceImages);
+  }
+
+  if (isWanModel(model)) {
+    return buildWanInput(prompt, model, args, referenceImages);
+  }
+
+  // Fall back to nano-banana schema for unknown Replicate models.
+  // This preserves backward compatibility; unsupported models will fail
+  // at API validation time if they reject nano-banana-style fields.
+  return buildNanoBananaInput(prompt, args, referenceImages);
 }
 
 async function readImageAsDataUrl(p: string): Promise<string> {
@@ -177,6 +382,8 @@ export async function generateImage(
   const apiToken = getApiToken();
   if (!apiToken) throw new Error("REPLICATE_API_TOKEN is required. Get one at https://replicate.com/account/api-tokens");
 
+  validateArgs(model, args);
+
   const parsedModel = parseModelId(model);
 
   const refDataUrls: string[] = [];
@@ -184,7 +391,7 @@ export async function generateImage(
     refDataUrls.push(await readImageAsDataUrl(refPath));
   }
 
-  const input = buildInput(prompt, args, refDataUrls);
+  const input = buildInput(prompt, model, args, refDataUrls);
 
   console.log(`Generating image with Replicate (${model})...`);
 
