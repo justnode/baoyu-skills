@@ -9,24 +9,8 @@ const MAX_POLL_MS = 300_000;
 const SIZE_PRESET_PATTERN = /^\d+K$/i;
 const SEEDREAM_45_SIZES = new Set(["2K", "4K"]);
 const SEEDREAM_5_LITE_SIZES = new Set(["2K", "3K"]);
-const WAN_PRO_SIZES = new Set([
-  "1K", "2K", "4K",
-  "1024*1024", "2048*2048", "4096*4096",
-  "1280*720", "720*1280",
-  "2048*1152", "1152*2048",
-  "4096*2304", "2304*4096",
-  "1024*768", "768*1024",
-  "2048*1536", "1536*2048",
-  "4096*3072", "3072*4096",
-]);
-const WAN_SIZES = new Set([
-  "1K", "2K",
-  "1024*1024", "2048*2048",
-  "1280*720", "720*1280",
-  "2048*1152", "1152*2048",
-  "1024*768", "768*1024",
-  "2048*1536", "1536*2048",
-]);
+const WAN_PRO_PRESET_SIZES = new Set(["1K", "2K", "4K"]);
+const WAN_PRESET_SIZES = new Set(["1K", "2K"]);
 
 export function getDefaultModel(): string {
   return process.env.REPLICATE_IMAGE_MODEL || DEFAULT_MODEL;
@@ -116,7 +100,7 @@ function getAllowedSeedreamSizes(model: string): Set<string> {
 }
 
 function getAllowedWanSizes(model: string): Set<string> {
-  return isWanProModel(model) ? WAN_PRO_SIZES : WAN_SIZES;
+  return isWanProModel(model) ? WAN_PRO_PRESET_SIZES : WAN_PRESET_SIZES;
 }
 
 function normalizePresetSize(size: string): string {
@@ -265,11 +249,15 @@ export function validateArgs(model: string, args: CliArgs): void {
       throw new Error("Wan image models on Replicate require --size when using --ar. This provider does not infer size from aspect ratio.");
     }
 
+    if (args.referenceImages.length > 9) {
+      throw new Error("Wan image models on Replicate support at most 9 reference images per request.");
+    }
+
     if (args.size) {
       const normalizedSize = parsePixelSize(args.size) ? normalizePixelSize(args.size) : normalizePresetSize(args.size);
-      if (!getAllowedWanSizes(model).has(normalizedSize)) {
+      if (!parsePixelSize(args.size) && !getAllowedWanSizes(model).has(normalizedSize)) {
         throw new Error(
-          `Wan image models on Replicate require --size to be one of ${Array.from(getAllowedWanSizes(model)).join(", ")}. Received: ${args.size}`
+          `Wan image models on Replicate require --size to be one of ${Array.from(getAllowedWanSizes(model)).join(", ")} or custom dimensions like 1920x1080. Received: ${args.size}`
         );
       }
     }

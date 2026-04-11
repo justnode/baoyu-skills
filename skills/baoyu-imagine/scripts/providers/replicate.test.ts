@@ -182,6 +182,22 @@ test("Replicate input builder maps Wan models to their native schema", () => {
       thinking_mode: true,
     },
   );
+
+  assert.deepEqual(
+    buildInput(
+      "A robot painter",
+      "wan-video/wan-2.7-image",
+      makeArgs({
+        size: "1536x1024",
+      }),
+      [],
+    ),
+    {
+      prompt: "A robot painter",
+      size: "1536*1024",
+      thinking_mode: true,
+    },
+  );
 });
 
 test("Replicate input builder falls back to nano-banana schema for unknown models", () => {
@@ -245,9 +261,22 @@ test("Replicate validation catches unsupported Seedream and Wan argument combina
     /Wan image models on Replicate require --size/,
   );
 
+  assert.doesNotThrow(
+    () => validateArgs("wan-video/wan-2.7-image", makeArgs({ size: "1536x1024" })),
+  );
+
+  assert.doesNotThrow(
+    () => validateArgs("wan-video/wan-2.7-image-pro", makeArgs({ size: "1920x1080" })),
+  );
+
+  assert.throws(
+    () => validateArgs("wan-video/wan-2.7-image-pro", makeArgs({ referenceImages: Array.from({ length: 10 }, () => "ref.png") })),
+    /support at most 9 reference images/,
+  );
+
   assert.throws(
     () => validateArgs("wan-video/wan-2.7-image", makeArgs({ size: "4K" })),
-    /Wan image models on Replicate require --size to be one of/,
+    /Wan image models on Replicate require --size to be one of 1K, 2K or custom dimensions/,
   );
 
   assert.throws(
