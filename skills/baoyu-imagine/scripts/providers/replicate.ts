@@ -196,10 +196,8 @@ function buildWanInput(prompt: string, model: string, args: CliArgs, referenceIm
   }
 
   // thinking_mode only applies to pure text-to-image.
-  // image_set_mode is not exposed by the current CLI, so no extra check is needed here yet.
-  if (referenceImages.length === 0) {
-    input.thinking_mode = true;
-  }
+  // image_set_mode is not exposed by the current CLI, so switch only on input-image presence for now.
+  input.thinking_mode = referenceImages.length === 0;
 
   return input;
 }
@@ -216,6 +214,8 @@ export function validateArgs(model: string, args: CliArgs): void {
   }
 
   if (isSeedreamModel(model)) {
+    const referenceCount = args.referenceImages.length;
+
     if (args.size) {
       const normalizedSize = normalizePresetSize(args.size);
       if (!getAllowedSeedreamSizes(model).has(normalizedSize)) {
@@ -225,8 +225,18 @@ export function validateArgs(model: string, args: CliArgs): void {
       }
     }
 
+    if (referenceCount > 14) {
+      throw new Error("Seedream on Replicate supports at most 14 reference images per request.");
+    }
+
     if (args.n < 1 || args.n > 15) {
       throw new Error("Seedream on Replicate supports --n values from 1 to 15.");
+    }
+
+    if (referenceCount + args.n > 15) {
+      throw new Error(
+        `Seedream on Replicate allows at most 15 total images per request (reference images + generated images). Received ${referenceCount} reference images and --n ${args.n}.`
+      );
     }
   }
 

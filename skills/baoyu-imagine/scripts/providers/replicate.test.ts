@@ -162,6 +162,7 @@ test("Replicate input builder maps Wan models to their native schema", () => {
       size: "2K",
       num_outputs: 2,
       images: ["data:image/png;base64,AAAA"],
+      thinking_mode: false,
     },
   );
 
@@ -212,6 +213,16 @@ test("Replicate validation catches unsupported Seedream and Wan argument combina
   assert.throws(
     () => validateArgs("bytedance/seedream-5-lite", makeArgs({ size: "4K" })),
     /Seedream on Replicate requires --size to be one of 2K, 3K/,
+  );
+
+  assert.throws(
+    () => validateArgs("bytedance/seedream-4.5", makeArgs({ referenceImages: Array.from({ length: 15 }, () => "ref.png") })),
+    /supports at most 14 reference images/,
+  );
+
+  assert.throws(
+    () => validateArgs("bytedance/seedream-5-lite", makeArgs({ referenceImages: Array.from({ length: 10 }, () => "ref.png"), n: 10 })),
+    /allows at most 15 total images per request/,
   );
 
   assert.throws(
