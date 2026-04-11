@@ -138,6 +138,10 @@ function buildNanoBananaInput(prompt: string, args: CliArgs, referenceImages: st
     input.resolution = "2K";
   }
 
+  if (args.n > 1) {
+    input.number_of_images = args.n;
+  }
+
   input.output_format = "png";
 
   if (referenceImages.length > 0) {

@@ -82,6 +82,29 @@ test("Replicate input builder keeps nano-banana mapping for compatible models", 
   );
 });
 
+test("Replicate fallback preserves --n for unknown models", () => {
+  assert.deepEqual(
+    buildInput(
+      "A robot painter",
+      "unknown-owner/unknown-model",
+      makeArgs({
+        aspectRatio: "16:9",
+        quality: "2k",
+        n: 4,
+      }),
+      ["ref"],
+    ),
+    {
+      prompt: "A robot painter",
+      aspect_ratio: "16:9",
+      resolution: "2K",
+      number_of_images: 4,
+      output_format: "png",
+      image_input: ["ref"],
+    },
+  );
+});
+
 test("Replicate input builder maps Seedream models to size-based schema", () => {
   assert.deepEqual(
     buildInput(
